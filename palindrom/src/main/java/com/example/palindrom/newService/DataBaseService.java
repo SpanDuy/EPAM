@@ -26,5 +26,4 @@ public class DataBaseService {
     public Optional<PalindromicEntity> getPalindromic(Long id) {
         return repository.findById(id);
     }
-    public Long
 }

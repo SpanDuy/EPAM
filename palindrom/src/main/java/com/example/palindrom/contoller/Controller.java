@@ -1,12 +1,11 @@
 package com.example.palindrom.contoller;
 
-import com.example.palindrom.entity.Response;
-import com.example.palindrom.entity.ResponseStats;
-import com.example.palindrom.entity.ResponsesSize;
+import com.example.palindrom.entity.*;
 import com.example.palindrom.exceptions.ValidationCustomerError;
 import com.example.palindrom.memory.InMemoryStorage;
 import com.example.palindrom.newService.AsyncPalindromicService;
 import com.example.palindrom.newService.DataBaseService;
+import com.example.palindrom.newService.IncrementService;
 import com.example.palindrom.newService.ServiceWord;
 import com.example.palindrom.validators.Validator;
 import com.example.palindrom.word.Palindromic;
@@ -24,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
@@ -34,14 +34,18 @@ public class Controller {
     private final InMemoryStorage inMemoryStorage;
     private final DataBaseService dataBaseService;
     private final AsyncPalindromicService asyncPalindromicService;
+    private final IncrementService incrementService;
+    //private final As
     @Autowired
     public Controller(Validator validator, ServiceWord service, InMemoryStorage inMemoryStorage,
-                      DataBaseService dataBaseService, AsyncPalindromicService asyncPalindromicService) {
+                      DataBaseService dataBaseService, AsyncPalindromicService asyncPalindromicService,
+                      IncrementService incrementService) {
         this.validator = validator;
         this.service = service;
         this.inMemoryStorage = inMemoryStorage;
         this.dataBaseService = dataBaseService;
         this.asyncPalindromicService = asyncPalindromicService;
+        this.incrementService = incrementService;
     }
     @GetMapping(value = "/palindromic", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
@@ -63,7 +67,7 @@ public class Controller {
                 palindromic.setWord(word);
                 response = new Response(palindromic);
                 response.getPalindromic().setIsPalindromic(service.isPalindromic(response.getPalindromic().getWord()));
-                inMemoryStorage.saveWordResponse(response.getPalindromic());
+                inMemoryStorage.saveWordResponse(palindromic);
                 dataBaseService.savePalindromic(palindromic);
                 return ResponseEntity.ok(response);
             } else {
@@ -201,8 +205,13 @@ public class Controller {
     }
     @GetMapping(value = "/getWithId", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<?> showDataBase(@RequestParam Long id) {
+    public ResponseEntity<?> showDataBaseId(@RequestParam Long id) {
         return new ResponseEntity<>(dataBaseService.getPalindromic(id), HttpStatus.OK);
+    }
+    @GetMapping(value = "/async/getWithId", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<?> showDataBaseAsyncId(@RequestParam Long id) {
+        return new ResponseEntity<>(asyncPalindromicService.getAsyncPalindromic(id), HttpStatus.OK);
     }
     @GetMapping(value = "/async", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
@@ -225,8 +234,8 @@ public class Controller {
                 response = new Response(palindromic);
                 response.getPalindromic().setIsPalindromic(service.isPalindromic(response.getPalindromic().getWord()));
                 inMemoryStorage.saveWordResponse(response.getPalindromic());
-                dataBaseService.savePalindromic(palindromic);
-                return ResponseEntity.ok(response);
+                //dataBaseService.savePalindromic(palindromic);
+
             } else {
                 throw new Exception();
             }
@@ -237,6 +246,16 @@ public class Controller {
             logger.error("2. Internal Server Error occured");
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        incrementService.saveIncrement();
+        IncrementEntity incrementEntity = incrementService.getIncrement();
+
+        AsyncEntity asyncEntity = new AsyncEntity(Math.toIntExact(incrementEntity.getId()), word, palindromic.getIsPalindromic());
+        asyncPalindromicService.makeAsyncCall(Math.toIntExact(incrementEntity.getId()),word);
+
+        logger.info("Return Result");
+        IdMessage idMessage = new IdMessage("Added to DataBase", incrementEntity.getId());
+
+        return ResponseEntity.ok(idMessage);
     }
 }
 

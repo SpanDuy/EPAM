@@ -8,8 +8,7 @@ import java.util.*;
 public class InMemoryStorage
 {
     private Map<String, Palindromic> dataStorage = new HashMap<String, Palindromic>();
-    public void saveWordResponse(Palindromic response)
-    {
+    public void saveWordResponse(Palindromic response) {
         dataStorage.put(response.getWord(), response);
     }
     public Palindromic getSavedWordResponse(String id)

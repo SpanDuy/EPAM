@@ -5,6 +5,9 @@ import com.example.palindrom.entity.ResponseStats;
 import com.example.palindrom.entity.ResponsesSize;
 import com.example.palindrom.exceptions.ValidationCustomerError;
 import com.example.palindrom.memory.InMemoryStorage;
+import com.example.palindrom.newService.AsyncPalindromicService;
+import com.example.palindrom.newService.DataBaseService;
+import com.example.palindrom.newService.IncrementService;
 import com.example.palindrom.newService.ServiceWord;
 import com.example.palindrom.validators.Validator;
 import com.example.palindrom.word.Palindromic;
@@ -30,8 +33,12 @@ class ControllerTest {
     @Mock
     private final InMemoryStorage inMemoryStorage = mock(InMemoryStorage.class);
     private final ResponseStats responseStats = mock(ResponseStats.class);
+    private final DataBaseService dataBaseService = mock(DataBaseService.class);
+    private final AsyncPalindromicService asyncPalindromicService = mock(AsyncPalindromicService.class);
+    private final IncrementService incrementService = mock(IncrementService.class);
     @InjectMocks
-    private Controller controller = new Controller(validator, serviceWord, inMemoryStorage);
+    private Controller controller = new Controller(validator, serviceWord, inMemoryStorage,
+            dataBaseService, asyncPalindromicService, incrementService);
     @Test
     void servicingWord() throws Exception {
         String testWord = "qwewq";
@@ -50,8 +57,9 @@ class ControllerTest {
         when(serviceWord.isPalindromic(testWord)).thenReturn(Boolean.TRUE);
         when(validator.validateParameter(testWord)).thenReturn(validationCustomerError);
 
-        //verify(inMemoryStorage, times(1)).saveWordResponse(response.getPalindromic());
-        assertEquals(responseEntity, controller.servicingWord(testWord));
+        ResponseEntity result = controller.servicingWord(testWord);
+        verify(inMemoryStorage, times(1)).saveWordResponse(response.getPalindromic());
+        assertEquals(responseEntity, result);
     }
     @Test
     void servicingWord1() throws Exception {

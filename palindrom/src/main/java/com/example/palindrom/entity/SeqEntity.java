@@ -3,7 +3,7 @@ package com.example.palindrom.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "new_table_seq")
+@Table(name = "increment_id")
 public class SeqEntity {
     @Id
     @Column(name = "program_id")
